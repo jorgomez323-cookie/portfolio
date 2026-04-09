@@ -132,19 +132,167 @@
   .resume-frame { width: 100%; height: 700px; border: none; display: block; background: #fff; }
   .resume-frame-placeholder { width: 100%; height: 400px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; }
   .resume-frame-placeholder p { font-family: var(--mono); font-size: 12px; color: var(--text-dim); text-align: center; }
+
+  .lightbox {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(5,8,15,0.95);
+  z-index: 1000;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  touch-action: pan-y;
+}
+
+.lightbox.active { display: flex; }
+
+.lightbox img {
+  max-width: 90vw;
+  max-height: 85vh;
+  object-fit: contain;
+  border: 1px solid var(--border);
+}
+
+.lightbox-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(30,160,255,0.12);
+  border: 1px solid rgba(30,160,255,0.45);
+  color: #8fd3ff;
+  font-size: 32px;
+  line-height: 1;
+  padding: 12px 16px;
+  cursor: pointer;
+  z-index: 1002;
+  transition: background 0.2s, border-color 0.2s, color 0.2s;
+}
+
+.lightbox-nav:hover {
+  background: rgba(30,160,255,0.22);
+  border-color: var(--blue);
+  color: var(--accent);
+}
+
+.lightbox-prev { left: 24px; }
+.lightbox-next { right: 24px; }
+
+@media (max-width: 768px) {
+  .lightbox-nav {
+    font-size: 24px;
+    padding: 10px 12px;
+  }
+
+  .lightbox-prev { left: 12px; }
+  .lightbox-next { right: 12px; }
+}
+
+.nav-links a.active {
+  color: var(--blue);
+  text-shadow: 0 0 8px rgba(30,160,255,0.45);
+}
+
+.nav-links a.active::after {
+  content: '';
+  display: block;
+  margin-top: 4px;
+  height: 1px;
+  background: var(--blue);
+  box-shadow: 0 0 8px rgba(30,160,255,0.45);
+}
+
+.resume-frame-placeholder {
+  width: 100%;
+  min-height: 260px;
+  padding: 32px 20px;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  text-align: center;
+  background: rgba(13,18,32,0.35);
+}
+
+.resume-frame-placeholder p {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--text-dim);
+  margin: 0;
+}
+
+.resume-viewer.mobile-fallback .resume-frame {
+  display: none;
+}
+
+.resume-viewer.mobile-fallback .resume-frame-placeholder {
+  display: flex !important;
+}
+
+@media (max-width: 768px) {
+  .resume-viewer {
+    min-height: 260px;
+  }
+
+  .resume-frame {
+    display: none;
+  }
+
+  .resume-frame-placeholder {
+    display: flex;
+  }
+}
+
+@media (max-width: 768px) {
+  nav .wrap {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .nav-brand {
+    white-space: nowrap;
+    display: block;
+    text-align: left;
+    font-size: 12px;
+  }
+
+  .nav-links {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 14px 20px;
+  }
+
+  .nav-links a {
+    font-size: 11px;
+  }
+}
+
 </style>
 </head>
 <body>
 
-<div id="lightbox" class="lightbox" onclick="closeLightbox()">
-  <span class="lightbox-close" onclick="closeLightbox()">[ CLOSE ]</span>
+<div id="lightbox" class="lightbox">
+  <span class="lightbox-close" onclick="closeLightbox(event)">[ CLOSE ]</span>
+
+  <button class="lightbox-nav lightbox-prev" onclick="showPrevImage(event)" aria-label="Previous image">
+    &#10094;
+  </button>
+
   <img id="lightbox-img" src="" alt="">
+
+  <button class="lightbox-nav lightbox-next" onclick="showNextImage(event)" aria-label="Next image">
+    &#10095;
+  </button>
+
   <div class="lightbox-caption" id="lightbox-caption"></div>
 </div>
 
 <nav>
   <div class="wrap">
-    <div class="nav-brand">JG | PORTFOLIO</div>
+    <div class="nav-brand">JG&nbsp;|&nbsp;PORTFOLIO</div>
     <div class="nav-links">
       <a href="#projects">Projects</a>
       <a href="#experience">Experience</a>
@@ -160,8 +308,8 @@
     <h1>Jorge Gomez,<span> EIT</span></h1>
     <div class="hero-sub">Electrical Engineering Student &amp; Engineering Intern</div>
     <p class="hero-desc">Electrical Engineering student at the University of California,
-       Riverside with hands-on experience in power distribution, ArcMaps, EV infrastructure, solar microgrids, BESS, project management 
-       and embedded systems. Engineer in Training certified. Building real infrastructure for Moreno Valley, CA.</p>
+       Riverside with hands-on experience in power distribution, ArcMaps, electric vehicle infrastructure, solar microgrids, battery energy storage systems, project management 
+       and embedded systems. Certified Engineer in Training in the state of California.</p>
     <div class="hero-badges">
       <span class="badge hi">GPA 3.85</span>
       <span class="badge hi">Dean's Honor List</span>
@@ -172,7 +320,6 @@
     <div class="hero-links">
       <a href="#projects" class="btn btn-primary">View Projects</a>
       <a href="https://www.linkedin.com/in/jgome123" target="_blank" class="btn btn-outline">LinkedIn</a>
-      <a href="mailto:jorgomez323@gmail.com" class="btn btn-outline">Email Me</a>
     </div>
   </div>
 </section>
@@ -187,9 +334,8 @@
       <div class="project-card featured" data-num="P-01" data-project="solar">
         <div class="card-tag">Electrical Design</div>
         <div class="card-title">Solar Carport Design</div>
-        <p class="card-desc">Designed full electrical plans for a municipal solar carport: single-line diagrams, inverter and transformer selection, switchgear layout, conductor sizing, grounding, and Title 24 compliant lighting.
-          Through the use of As-Builts, Utility Coordination, and NEC guidelines, I developed a design in AutoCAD that optimizes material costs while ensuring safety, code compliance, and efficient energy production for the city. 
-          In turn offsetting site load through clean energy generation and contributing to the city’s sustainability goals.
+        <p class="card-desc">Designed full electrical plans for a 750 KW municipal solar carport: single-line diagrams, inverter and transformer selection, switchgear layout, conductor sizing, grounding, and Title 24 compliant lighting.
+          Through the use of As-Builts, Utility Coordination, and NEC guidelines, I developed a design in AutoCAD that optimizes material costs while ensuring safety, code compliance, and efficient energy production for the city, in turn offsetting site load through clean energy generation and contributing to the city’s sustainability goals.
         </p>
         <div class="card-skills">
           <span class="skill-chip accent">NEC Standards</span><span class="skill-chip accent">AutoCAD</span><span class="skill-chip accent">Title 24</span><span class="skill-chip accent">Medium Voltage Design</span><span class="skill-chip accent">Low Voltage Design</span>
@@ -370,16 +516,24 @@
   <div class="wrap">
     <div class="sec-label"></div>
     <div class="sec-title">Resume</div>
+
     <div class="resume-actions">
       <a id="resume-download" href="#" class="btn btn-primary" download="Jorge_Gomez_Resume.pdf">Download PDF</a>
       <a id="resume-open" href="#" target="_blank" class="btn btn-outline">Open in New Tab</a>
     </div>
-    <div class="resume-viewer">
+
+    <div class="resume-viewer" id="resume-viewer">
       <div class="resume-viewer-header">
         <span class="resume-viewer-title">Jorge_Gomez_Resume.pdf</span>
         <span style="font-family: var(--mono); font-size: 10px; color: var(--text-dim);">PDF VIEWER</span>
       </div>
+
       <iframe id="resume-frame" class="resume-frame" title="Resume"></iframe>
+
+      <div id="resume-fallback" class="resume-frame-placeholder" style="display: none;">
+        <p>PDF preview may not display on this device.</p>
+        <p>Use <strong>Open in New Tab</strong> or <strong>Download PDF</strong>.</p>
+      </div>
     </div>
   </div>
 </section>
@@ -439,9 +593,7 @@ const PROJECT_IMAGES = {
     { src: 'assets/projects/car/image7.PNG', alt: 'Autonomous Organizing Car Robotic Arm Joint' },
     { src: 'assets/projects/car/image8.PNG', alt: 'Autonomous Organizing Car Robotic Arm Gripper' }
   ],
-  billing: [
-  ],
-
+  billing: [],
   gis: [
     { src: 'assets/projects/gis/image1.png', alt: 'GIS Map Visualization' },
     { src: 'assets/projects/gis/image2.png', alt: 'GIS Model Analysis' },
@@ -451,11 +603,16 @@ const PROJECT_IMAGES = {
 
 const RESUME_PATH = 'assets/resume/Jorge_Gomez_Resume.pdf';
 
+let currentProjectId = null;
+let currentImageIndex = 0;
+let touchStartX = 0;
+let touchEndX = 0;
+
 function assetUrl(path) {
   return new URL(path, document.baseURI).href;
 }
 
-function addProjectImage(projectId, src, alt) {
+function addProjectImage(projectId, src, alt, index) {
   const container = document.getElementById('imgs-' + projectId);
   if (!container) return;
 
@@ -465,44 +622,216 @@ function addProjectImage(projectId, src, alt) {
   img.alt = alt || '';
   img.loading = 'lazy';
   img.onclick = function() {
-    openLightbox(assetUrl(src), alt || 'Project image');
+    openLightbox(projectId, index);
   };
+
   container.appendChild(img);
 }
 
 function initProjectImages() {
-  Object.entries(PROJECT_IMAGES).forEach(function(entry) {
-    const [projectId, images] = entry;
-    images.forEach(function(image) {
-      addProjectImage(projectId, image.src, image.alt);
+  Object.entries(PROJECT_IMAGES).forEach(function([projectId, images]) {
+    images.forEach(function(image, index) {
+      addProjectImage(projectId, image.src, image.alt, index);
     });
   });
 }
 
 function initResume() {
   const resumeUrl = assetUrl(RESUME_PATH);
-  document.getElementById('resume-frame').src = resumeUrl;
-  document.getElementById('resume-download').href = resumeUrl;
-  document.getElementById('resume-open').href = resumeUrl;
+  const frame = document.getElementById('resume-frame');
+  const downloadBtn = document.getElementById('resume-download');
+  const openBtn = document.getElementById('resume-open');
+  const viewer = document.getElementById('resume-viewer');
+
+  downloadBtn.href = resumeUrl;
+  openBtn.href = resumeUrl;
+
+  const isMobileLike = window.innerWidth <= 768 ||
+    /iPhone|iPad|iPod|Android|Mobile/i.test(navigator.userAgent);
+
+  if (isMobileLike) {
+    viewer.classList.add('mobile-fallback');
+    return;
+  }
+
+  frame.src = resumeUrl;
+
+  setTimeout(function () {
+    try {
+      const loaded = frame.contentWindow && frame.contentWindow.location.href;
+      if (!loaded || loaded === 'about:blank') {
+        viewer.classList.add('mobile-fallback');
+      }
+    } catch (e) {
+      // Cross-origin or browser restriction: leave iframe as-is
+    }
+  }, 1500);
 }
 
-function openLightbox(src, caption) {
-  document.getElementById('lightbox-img').src = src;
-  document.getElementById('lightbox-caption').textContent = caption;
+function renderLightboxImage() {
+  if (!currentProjectId || !PROJECT_IMAGES[currentProjectId]?.length) return;
+
+  const image = PROJECT_IMAGES[currentProjectId][currentImageIndex];
+  document.getElementById('lightbox-img').src = assetUrl(image.src);
+  document.getElementById('lightbox-img').alt = image.alt || '';
+  document.getElementById('lightbox-caption').textContent =
+    image.alt || `Image ${currentImageIndex + 1}`;
+}
+
+function openLightbox(projectId, index) {
+  currentProjectId = projectId;
+  currentImageIndex = index;
+  renderLightboxImage();
   document.getElementById('lightbox').classList.add('active');
+  document.body.style.overflow = 'hidden';
 }
 
-function closeLightbox() {
+function closeLightbox(event) {
+  if (event) event.stopPropagation();
   document.getElementById('lightbox').classList.remove('active');
+  document.body.style.overflow = '';
+}
+
+function showPrevImage(event) {
+  if (event) event.stopPropagation();
+  const images = PROJECT_IMAGES[currentProjectId];
+  if (!images || !images.length) return;
+
+  currentImageIndex = (currentImageIndex - 1 + images.length) % images.length;
+  renderLightboxImage();
+}
+
+function showNextImage(event) {
+  if (event) event.stopPropagation();
+  const images = PROJECT_IMAGES[currentProjectId];
+  if (!images || !images.length) return;
+
+  currentImageIndex = (currentImageIndex + 1) % images.length;
+  renderLightboxImage();
 }
 
 document.addEventListener('keydown', function(e) {
+  const lightbox = document.getElementById('lightbox');
+  if (!lightbox.classList.contains('active')) return;
+
   if (e.key === 'Escape') closeLightbox();
+  if (e.key === 'ArrowLeft') showPrevImage();
+  if (e.key === 'ArrowRight') showNextImage();
 });
+
+const lightbox = document.getElementById('lightbox');
+
+lightbox.addEventListener('click', function(e) {
+  if (e.target.id === 'lightbox') {
+    closeLightbox();
+  }
+});
+
+lightbox.addEventListener('wheel', function(e) {
+  if (!lightbox.classList.contains('active')) return;
+  e.preventDefault();
+
+  if (e.deltaY > 0) {
+    showNextImage();
+  } else {
+    showPrevImage();
+  }
+}, { passive: false });
+
+lightbox.addEventListener('touchstart', function(e) {
+  touchStartX = e.changedTouches[0].screenX;
+}, { passive: true });
+
+lightbox.addEventListener('touchend', function(e) {
+  touchEndX = e.changedTouches[0].screenX;
+  handleSwipe();
+}, { passive: true });
+
+function handleSwipe() {
+  const swipeDistance = touchEndX - touchStartX;
+  const minSwipeDistance = 50;
+
+  if (Math.abs(swipeDistance) < minSwipeDistance) return;
+
+  if (swipeDistance > 0) {
+    showPrevImage();
+  } else {
+    showNextImage();
+  }
+}
+
+function setActiveNavLink(sectionId) {
+  const navLinks = document.querySelectorAll('.nav-links a');
+
+  navLinks.forEach(link => {
+    const href = link.getAttribute('href');
+    link.classList.toggle('active', href === '#' + sectionId);
+  });
+}
+
+function updateActiveNavOnScroll() {
+  const sections = document.querySelectorAll('section[id]');
+  const projectsSection = document.getElementById('projects');
+  const contactSection = document.getElementById('contact');
+
+  const nav = document.querySelector('nav');
+  const navHeight = nav ? nav.offsetHeight : 0;
+
+  const scrollY = window.scrollY;
+  const viewportHeight = window.innerHeight;
+  const docHeight = document.documentElement.scrollHeight;
+
+  // TOP OF PAGE:
+  // Since hero has no nav item, treat the upper area as Projects
+  if (projectsSection && scrollY < projectsSection.offsetTop - navHeight - 80) {
+    setActiveNavLink('projects');
+    return;
+  }
+
+  // BOTTOM OF PAGE:
+  // Force Contact active when near the bottom
+  if (contactSection && scrollY + viewportHeight >= docHeight - 20) {
+    setActiveNavLink('contact');
+    return;
+  }
+
+  const probeLine = scrollY + navHeight + (viewportHeight * 0.28);
+
+  let currentSectionId = '';
+
+  sections.forEach(section => {
+    const top = section.offsetTop;
+    const bottom = top + section.offsetHeight;
+
+    if (probeLine >= top && probeLine < bottom) {
+      currentSectionId = section.id;
+    }
+  });
+
+  if (currentSectionId) {
+    setActiveNavLink(currentSectionId);
+  }
+}
+
+function initActiveNav() {
+  const navLinks = document.querySelectorAll('.nav-links a');
+
+  navLinks.forEach(link => {
+    link.addEventListener('click', function() {
+      const targetId = this.getAttribute('href').replace('#', '');
+      setActiveNavLink(targetId);
+    });
+  });
+
+  window.addEventListener('scroll', updateActiveNavOnScroll);
+  window.addEventListener('resize', updateActiveNavOnScroll);
+  updateActiveNavOnScroll();
+}
 
 window.addEventListener('DOMContentLoaded', function() {
   initProjectImages();
   initResume();
+  initActiveNav();
 });
 </script>
 </body>
