@@ -224,15 +224,24 @@
   max-width: 90vw;
   max-height: 85vh;
   overflow: auto;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: block;
   touch-action: none;
   cursor: grab;
 }
 
 .lightbox-stage.is-panning {
   cursor: grabbing;
+}
+
+.lightbox img {
+  display: block;
+  margin: 0 auto;
+  width: auto;
+  height: auto;
+  max-width: none;
+  max-height: none;
+  object-fit: contain;
+  border: 1px solid var(--border);
 }
 
 .nav-links a.active {
@@ -667,6 +676,8 @@ let panStartX = 0;
 let panStartY = 0;
 let startScrollLeft = 0;
 let startScrollTop = 0;
+let baseImageWidth = 0;
+let baseImageHeight = 0;
 
 function assetUrl(path) {
   return new URL(path, document.baseURI).href;
@@ -732,10 +743,29 @@ function renderLightboxImage() {
   if (!currentProjectId || !PROJECT_IMAGES[currentProjectId]?.length) return;
 
   const image = PROJECT_IMAGES[currentProjectId][currentImageIndex];
-  document.getElementById('lightbox-img').src = assetUrl(image.src);
-  document.getElementById('lightbox-img').alt = image.alt || '';
-  document.getElementById('lightbox-caption').textContent =
-    image.alt || `Image ${currentImageIndex + 1}`;
+  const img = document.getElementById('lightbox-img');
+  const caption = document.getElementById('lightbox-caption');
+  const stage = document.getElementById('lightbox-stage');
+
+  img.onload = function () {
+    const stageRect = stage.getBoundingClientRect();
+    const stageW = stageRect.width;
+    const stageH = stageRect.height;
+
+    const naturalW = img.naturalWidth;
+    const naturalH = img.naturalHeight;
+
+    const fitScale = Math.min(stageW / naturalW, stageH / naturalH, 1);
+
+    baseImageWidth = naturalW * fitScale;
+    baseImageHeight = naturalH * fitScale;
+
+    resetLightboxZoom();
+  };
+
+  img.src = assetUrl(image.src);
+  img.alt = image.alt || '';
+  caption.textContent = image.alt || `Image ${currentImageIndex + 1}`;
 }
 
 function openLightbox(projectId, index) {
@@ -825,7 +855,10 @@ function resetLightboxZoom() {
   const stage = document.getElementById('lightbox-stage');
   const lightbox = document.getElementById('lightbox');
 
-  img.style.transform = 'scale(1)';
+  img.style.width = `${baseImageWidth}px`;
+  img.style.height = `${baseImageHeight}px`;
+  img.style.transform = 'none';
+
   stage.scrollLeft = 0;
   stage.scrollTop = 0;
   lightbox.classList.remove('zoomed');
@@ -835,7 +868,8 @@ function applyLightboxZoom() {
   const img = document.getElementById('lightbox-img');
   const lightbox = document.getElementById('lightbox');
 
-  img.style.transform = `scale(${lightboxScale})`;
+  img.style.width = `${baseImageWidth * lightboxScale}px`;
+  img.style.height = `${baseImageHeight * lightboxScale}px`;
 
   if (lightboxScale > 1) {
     lightbox.classList.add('zoomed');
