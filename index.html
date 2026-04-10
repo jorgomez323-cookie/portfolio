@@ -220,6 +220,21 @@
   max-height: none;
 }
 
+.lightbox-stage {
+  max-width: 90vw;
+  max-height: 85vh;
+  overflow: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  touch-action: none;
+  cursor: grab;
+}
+
+.lightbox-stage.is-panning {
+  cursor: grabbing;
+}
+
 .nav-links a.active {
   color: var(--blue);
   text-shadow: 0 0 8px rgba(30,160,255,0.45);
@@ -300,6 +315,8 @@
   .nav-links a {
     font-size: 11px;
   }
+
+  
 }
 
 </style>
@@ -645,6 +662,11 @@ let lightboxScale = 1;
 let minScale = 1;
 let maxScale = 4;
 let lastTouchDistance = null;
+let isPanning = false;
+let panStartX = 0;
+let panStartY = 0;
+let startScrollLeft = 0;
+let startScrollTop = 0;
 
 function assetUrl(path) {
   return new URL(path, document.baseURI).href;
@@ -797,6 +819,7 @@ lightboxStage.addEventListener('touchend', function() {
 function resetLightboxZoom() {
   lightboxScale = 1;
   lastTouchDistance = null;
+  isPanning = false;
 
   const img = document.getElementById('lightbox-img');
   const stage = document.getElementById('lightbox-stage');
@@ -829,6 +852,77 @@ function zoomLightbox(delta) {
 
   applyLightboxZoom();
 }
+
+function canPanLightbox() {
+  return lightbox.classList.contains('active') && lightboxScale > 1.05;
+}
+
+/* MOUSE PAN */
+lightboxStage.addEventListener('mousedown', function(e) {
+  if (!canPanLightbox()) return;
+
+  e.preventDefault();
+  isPanning = true;
+  lightboxStage.classList.add('is-panning');
+
+  panStartX = e.clientX;
+  panStartY = e.clientY;
+  startScrollLeft = lightboxStage.scrollLeft;
+  startScrollTop = lightboxStage.scrollTop;
+});
+
+window.addEventListener('mousemove', function(e) {
+  if (!isPanning) return;
+
+  e.preventDefault();
+
+  const dx = e.clientX - panStartX;
+  const dy = e.clientY - panStartY;
+
+  lightboxStage.scrollLeft = startScrollLeft - dx;
+  lightboxStage.scrollTop = startScrollTop - dy;
+});
+
+window.addEventListener('mouseup', function() {
+  isPanning = false;
+  lightboxStage.classList.remove('is-panning');
+});
+
+/* TOUCH PAN */
+lightboxStage.addEventListener('touchstart', function(e) {
+  if (!canPanLightbox()) return;
+  if (e.touches.length !== 1) return;
+
+  isPanning = true;
+  panStartX = e.touches[0].clientX;
+  panStartY = e.touches[0].clientY;
+  startScrollLeft = lightboxStage.scrollLeft;
+  startScrollTop = lightboxStage.scrollTop;
+}, { passive: true });
+
+lightboxStage.addEventListener('touchmove', function(e) {
+  if (!isPanning) return;
+  if (!canPanLightbox()) return;
+  if (e.touches.length !== 1) return;
+
+  e.preventDefault();
+
+  const dx = e.touches[0].clientX - panStartX;
+  const dy = e.touches[0].clientY - panStartY;
+
+  lightboxStage.scrollLeft = startScrollLeft - dx;
+  lightboxStage.scrollTop = startScrollTop - dy;
+}, { passive: false });
+
+lightboxStage.addEventListener('touchend', function(e) {
+  if (e.touches.length === 0) {
+    isPanning = false;
+  }
+});
+
+lightboxStage.addEventListener('touchcancel', function() {
+  isPanning = false;
+});
 
 function getTouchDistance(touches) {
   const dx = touches[0].clientX - touches[1].clientX;
@@ -887,7 +981,6 @@ function handleSwipe() {
     showNextImage();
   }
 }
-
 function setActiveNavLink(sectionId) {
   const navLinks = document.querySelectorAll('.nav-links a');
 
