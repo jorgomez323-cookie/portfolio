@@ -188,6 +188,38 @@
   .lightbox-next { right: 12px; }
 }
 
+.lightbox-stage {
+  max-width: 90vw;
+  max-height: 85vh;
+  overflow: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  touch-action: none;
+  cursor: grab;
+}
+
+.lightbox-stage:active {
+  cursor: grabbing;
+}
+
+.lightbox img {
+  max-width: 90vw;
+  max-height: 85vh;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  border: 1px solid var(--border);
+  transform-origin: center center;
+  transition: transform 0.08s ease;
+}
+
+.lightbox.zoomed .lightbox-img,
+.lightbox.zoomed img {
+  max-width: none;
+  max-height: none;
+}
+
 .nav-links a.active {
   color: var(--blue);
   text-shadow: 0 0 8px rgba(30,160,255,0.45);
@@ -281,7 +313,9 @@
     &#10094;
   </button>
 
-  <img id="lightbox-img" src="" alt="">
+  <div class="lightbox-stage" id="lightbox-stage">
+    <img id="lightbox-img" src="" alt="">
+  </div>
 
   <button class="lightbox-nav lightbox-next" onclick="showNextImage(event)" aria-label="Next image">
     &#10095;
@@ -607,6 +641,10 @@ let currentProjectId = null;
 let currentImageIndex = 0;
 let touchStartX = 0;
 let touchEndX = 0;
+let lightboxScale = 1;
+let minScale = 1;
+let maxScale = 4;
+let lastTouchDistance = null;
 
 function assetUrl(path) {
   return new URL(path, document.baseURI).href;
@@ -682,10 +720,10 @@ function openLightbox(projectId, index) {
   currentProjectId = projectId;
   currentImageIndex = index;
   renderLightboxImage();
+  resetLightboxZoom();
   document.getElementById('lightbox').classList.add('active');
   document.body.style.overflow = 'hidden';
 }
-
 function closeLightbox(event) {
   if (event) event.stopPropagation();
   document.getElementById('lightbox').classList.remove('active');
@@ -699,6 +737,7 @@ function showPrevImage(event) {
 
   currentImageIndex = (currentImageIndex - 1 + images.length) % images.length;
   renderLightboxImage();
+  resetLightboxZoom();
 }
 
 function showNextImage(event) {
@@ -708,6 +747,93 @@ function showNextImage(event) {
 
   currentImageIndex = (currentImageIndex + 1) % images.length;
   renderLightboxImage();
+  resetLightboxZoom();
+}
+
+const lightboxStage = document.getElementById('lightbox-stage');
+
+lightboxStage.addEventListener('wheel', function(e) {
+  if (!lightbox.classList.contains('active')) return;
+
+  e.preventDefault();
+
+  if (e.deltaY < 0) {
+    zoomLightbox(0.15);
+  } else {
+    zoomLightbox(-0.15);
+  }
+}, { passive: false });
+
+lightboxStage.addEventListener('touchstart', function(e) {
+  if (e.touches.length === 2) {
+    lastTouchDistance = getTouchDistance(e.touches);
+  }
+}, { passive: false });
+
+lightboxStage.addEventListener('touchmove', function(e) {
+  if (!lightbox.classList.contains('active')) return;
+
+  if (e.touches.length === 2) {
+    e.preventDefault();
+
+    const newDistance = getTouchDistance(e.touches);
+
+    if (lastTouchDistance !== null) {
+      const diff = newDistance - lastTouchDistance;
+
+      if (Math.abs(diff) > 4) {
+        zoomLightbox(diff * 0.003);
+      }
+    }
+
+    lastTouchDistance = newDistance;
+  }
+}, { passive: false });
+
+lightboxStage.addEventListener('touchend', function() {
+  lastTouchDistance = null;
+});
+
+function resetLightboxZoom() {
+  lightboxScale = 1;
+  lastTouchDistance = null;
+
+  const img = document.getElementById('lightbox-img');
+  const stage = document.getElementById('lightbox-stage');
+  const lightbox = document.getElementById('lightbox');
+
+  img.style.transform = 'scale(1)';
+  stage.scrollLeft = 0;
+  stage.scrollTop = 0;
+  lightbox.classList.remove('zoomed');
+}
+
+function applyLightboxZoom() {
+  const img = document.getElementById('lightbox-img');
+  const lightbox = document.getElementById('lightbox');
+
+  img.style.transform = `scale(${lightboxScale})`;
+
+  if (lightboxScale > 1) {
+    lightbox.classList.add('zoomed');
+  } else {
+    lightbox.classList.remove('zoomed');
+  }
+}
+
+function zoomLightbox(delta) {
+  lightboxScale += delta;
+
+  if (lightboxScale < minScale) lightboxScale = minScale;
+  if (lightboxScale > maxScale) lightboxScale = maxScale;
+
+  applyLightboxZoom();
+}
+
+function getTouchDistance(touches) {
+  const dx = touches[0].clientX - touches[1].clientX;
+  const dy = touches[0].clientY - touches[1].clientY;
+  return Math.sqrt(dx * dx + dy * dy);
 }
 
 document.addEventListener('keydown', function(e) {
@@ -748,6 +874,8 @@ lightbox.addEventListener('touchend', function(e) {
 }, { passive: true });
 
 function handleSwipe() {
+  if (lightboxScale > 1.05) return;
+
   const swipeDistance = touchEndX - touchStartX;
   const minSwipeDistance = 50;
 
