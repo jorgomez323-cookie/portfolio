@@ -35,6 +35,9 @@
   .nav-links { display: flex; gap: 28px; flex-wrap: wrap; }
   .nav-links a { font-family: var(--mono); font-size: 12px; color: var(--text-dim); text-decoration: none; letter-spacing: 0.08em; text-transform: uppercase; transition: color 0.2s; }
   .nav-links a:hover { color: var(--blue); }
+  /* Hamburger button */
+  .nav-toggle { display: none; background: none; border: 1px solid var(--border); color: var(--text-dim); font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em; padding: 6px 12px; cursor: pointer; transition: all 0.2s; }
+  .nav-toggle:hover { color: var(--blue); border-color: var(--blue); }
   .hero { padding: 80px 0 60px; border-bottom: 1px solid var(--border); }
   .hero-tag { font-family: var(--mono); font-size: 11px; color: var(--accent); letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
   .hero-tag::before { content: ''; display: inline-block; width: 24px; height: 1px; background: var(--accent); }
@@ -321,32 +324,84 @@
   }
 }
 
+/* ── Mobile overrides ── */
 @media (max-width: 768px) {
-  nav .wrap {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 12px;
-  }
-
-  .nav-brand {
-    white-space: nowrap;
-    display: block;
-    text-align: left;
-    font-size: 12px;
-  }
-
+  /* Nav: hamburger */
+  nav .wrap { flex-wrap: wrap; gap: 0; position: relative; }
+  .nav-toggle { display: block; }
   .nav-links {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 14px 20px;
+    display: none;
+    width: 100%;
+    flex-direction: column;
+    gap: 0;
+    padding: 8px 0 4px;
+    border-top: 1px solid var(--border);
+    margin-top: 10px;
   }
-
+  .nav-links.open { display: flex; }
   .nav-links a {
-    font-size: 11px;
+    font-size: 12px;
+    padding: 10px 4px;
+    border-bottom: 1px solid rgba(30,160,255,0.07);
   }
+  .nav-links a:last-child { border-bottom: none; }
 
-  
+  /* Hero */
+  .hero { padding: 40px 0 36px; }
+  .hero h1 { font-size: clamp(38px, 11vw, 60px); }
+  .hero-sub { font-size: clamp(14px, 4.5vw, 20px); margin-bottom: 18px; }
+  .hero-desc { margin-bottom: 24px; }
+  .hero-badges { gap: 8px; margin-bottom: 24px; }
+  .hero-links { flex-direction: column; gap: 10px; }
+  .hero-links .btn { text-align: center; padding: 13px 20px; }
+
+  /* Section spacing */
+  section { padding: 44px 0; }
+  .sec-title { font-size: 26px; margin-bottom: 28px; }
+
+  /* Project cards */
+  .projects-grid { grid-template-columns: 1fr; }
+  .project-card.featured { grid-column: 1; }
+  .project-card { padding: 18px 16px; }
+
+  /* Larger touch targets for image thumbnails */
+  .proj-img-thumb { width: 72px; height: 56px; }
+  .proj-img-grid { gap: 10px; }
+
+  /* Skills grid */
+  .skills-grid { grid-template-columns: 1fr 1fr; gap: 12px; }
+  .skills-group { padding: 14px 12px; }
+
+  /* Education */
+  .edu-grid { grid-template-columns: 1fr; }
+
+  /* Cert tag */
+  .cert-tag { font-size: 10px; flex-wrap: wrap; }
+
+  /* Contact */
+  .contact-bar { flex-direction: column; gap: 14px; align-items: flex-start; }
+  .contact-item { font-size: 14px; }
+  .contact-item .ci-val { font-size: 13px; word-break: break-all; }
+
+  /* Resume placeholder */
+  .resume-frame-placeholder { min-height: 200px; padding: 28px 16px; }
+  .resume-actions { gap: 10px; }
+  .resume-actions .btn { flex: 1 1 auto; text-align: center; }
+
+  /* Footer */
+  .footer-inner { flex-direction: column; align-items: flex-start; gap: 6px; }
+
+  /* General touch-friendliness */
+  .btn { min-height: 44px; display: inline-flex; align-items: center; justify-content: center; }
+  .upload-zone { padding: 16px; }
+}
+
+/* Extra-small phones */
+@media (max-width: 380px) {
+  .wrap { padding: 0 14px; }
+  .skills-grid { grid-template-columns: 1fr; }
+  .hero h1 { font-size: 34px; }
+  .badge { font-size: 10px; padding: 4px 10px; }
 }
 
 </style>
@@ -374,7 +429,8 @@
 <nav>
   <div class="wrap">
     <div class="nav-brand">JG&nbsp;|&nbsp;PORTFOLIO</div>
-    <div class="nav-links">
+    <button class="nav-toggle" id="nav-toggle" aria-label="Toggle navigation" aria-expanded="false">MENU</button>
+    <div class="nav-links" id="nav-links">
       <a href="#projects">Projects</a>
       <a href="#experience">Experience</a>
       <a href="#skills">Skills</a>
@@ -1108,6 +1164,25 @@ window.addEventListener('DOMContentLoaded', function() {
   initProjectImages();
   initResume();
   initActiveNav();
+
+  // Hamburger menu
+  const toggle = document.getElementById('nav-toggle');
+  const navLinks = document.getElementById('nav-links');
+  if (toggle && navLinks) {
+    toggle.addEventListener('click', function() {
+      const open = navLinks.classList.toggle('open');
+      toggle.setAttribute('aria-expanded', open);
+      toggle.textContent = open ? 'CLOSE' : 'MENU';
+    });
+    // Close menu when a nav link is tapped
+    navLinks.querySelectorAll('a').forEach(function(link) {
+      link.addEventListener('click', function() {
+        navLinks.classList.remove('open');
+        toggle.setAttribute('aria-expanded', false);
+        toggle.textContent = 'MENU';
+      });
+    });
+  }
 });
 </script>
 </body>
